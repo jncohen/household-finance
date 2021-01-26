@@ -1,0 +1,198 @@
+---
+title: "Am I Rich?"
+author: "Joseph Cohen"
+date: "1/25/2021"
+output: html_document
+---
+
+```{r, include = F}
+rm(list=ls())
+gc()
+
+directory <- "E:/Dropbox/Research/HHfinance"
+data.directory <- "E:/Dropbox/Data/scf"
+setwd(directory)
+
+source(paste0(data.directory, "/SCF Set Up Analysis.R"))
+
+library(RWordPress)
+library(XMLRPC)
+library(knitr)
+library(ggplot2)
+library(scales)
+
+source("E:/Dropbox/Web/WPCrds.R")
+
+postTitle = "Am I Rich?"
+fileName = "Am I Rich.Rmd"
+
+
+setwd(data.directory)
+survey.year <- 2019
+setup.scf(survey.year)
+
+```
+
+Studies show that people do a poor job of guessing how their economic situation compares to other people (example studies [here](https://www.nber.org/system/files/working_papers/w26555/w26555.pdf), [here](https://www.researchgate.net/publication/303865520_Richer_and_Holier_Than_Thou_The_Effect_of_Relative_Income_Improvements_on_Demand_for_Redistribution), and [here](https://press.uchicago.edu/ucp/books/book/chicago/E/bo50700426.html)). This situation makes sense. It is impolite to pry into other people's finances.  Most people's knowledge about what constitutes a "high" or "low" income comes from the brackets they read when filing their taxes.
+
+One way to get a more precise sense of one's own position on the economic ladder is to examine its distribution across society-at-large, which can be done using data from the [*Survey of Consumer Finances*.](https://www.federalreserve.gov/econres/scfindex.htm). Conventionally, we Our focus will be on differences in households, as opposed to people, because most people pool their money and expenditures at this level of organization.  People's personal fortunes are often highly dependent on the their household's economic situation.  We think of a houseohld's place on this ladder as a matter of two variables: *income* (how much money flows into the household regularly) and *wealth* (the value of the household's property, less its debts).
+
+## Income
+
+In 2019, the median American household earned \$58.644  The middle 50% -- between the 25th and 75th percentiles -- earned betwewen \$30.543 and \$107.717.  An income of at least \$191,605 puts you in society's top 10%, one of \$289,960 puts you in the top 5%, and one of \$867,620 makes you a One-Percenter in terms of income.  To be in the bottom 10%, one's household had to take in less than \$16,290
+
+```{r, eval = F, include = F}
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ income ,
+        0.1 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ income ,
+        0.25 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ income ,
+        0.5 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ income ,
+        0.75 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ income ,
+        0.9 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ income ,
+        0.95 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ income ,
+        0.99 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+
+```
+
+The bar chart below gives a more detailed sense of the distribution of household incomes.
+
+```{r, eval = T, include = F}
+
+scf.design <- update(scf.design,
+                     inc.cats = cut(income, c(-999999999,15000,30000,50000,75000,100000,150000,250000,500000,1000000,999999999),
+                                    labels = c("Below $15k", "$15k - $30k", "$30k - $50k", "$50k - $75k", "$75 - $100k",
+                                               "$100k - $150k", "$150k - $250k", "$250k - $500k", "$500k - $1M", "$1M+")))
+
+temp <- scf_MIcombine( with( scf.design , svymean( ~ inc.cats ) ) )
+
+dat1 <- data.frame(
+    cats = factor(
+        1:10,
+        labels = c("Below $15k", "$15k - $30k", "$30k - $50k", "$50k - $75k", "$75 - $100k",
+             "$100k - $150k", "$150k - $250k", "$250k - $500k", "$500k - $1M", "$1M+"),
+        ordered = T),
+    percent = temp$coefficients)
+
+fig1 <- ggplot(dat1, aes(x = cats, y = percent)) + geom_bar(stat='identity') + ylab("Percent of U.S. Houseohlds") + xlab("Income Categories")
+
+```
+
+```{r, echo = F, fig.height = 5, fig.width=10}
+fig1 + ggtitle("Distribution of Incomes")
+```
+
+## Wealth
+
+The 2019 SCF data suggests the median U.S. household net worth of \$121,511  The middle 50% (between the 25th and 75th percentiles) are worth between \$12,436 and \$403,358  More than 10% of American households have negative net worth, which is to say that they owe more money than they own in property.  A net worth of \$1.2 million puts you in the top 10%, one of \$2.6 million puts you in the top 5%, and one of \$11 million is enough to be part of the One Percent.
+
+```{r, eval = F, include = F}
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ networth ,
+        0.1 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ networth ,
+        0.25 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ networth ,
+        0.5 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ networth ,
+        0.75 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ networth ,
+        0.9 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ networth ,
+        0.95 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+scf_MIcombine( with( scf.design ,
+    svyquantile(
+        ~ networth ,
+        0.99 , se = TRUE , method = 'constant' , interval.type = 'quantile' ) ) )
+
+
+```
+
+The bar chart below describes the distribution of net worth among U.S. households:
+
+```{r, eval = T, include = F}
+
+scf.design <- update(scf.design,
+                     wealth.cats = cut(networth, c(-9999999999999,10000,50000,200000,500000,1000000,5000000,10000000,9999999999999),
+                                    labels = c("Below $10k", "$10k - $50k", "$50k - $200k", "$200k - $500k", "$500k - $1M",
+                                               "$1M - $5M", "$5M - $10M", "$10M+")))
+
+temp <- scf_MIcombine( with( scf.design , svymean( ~ wealth.cats ) ) )
+
+dat2 <- data.frame(
+    cats = factor(
+        1:8,
+        labels = c("Below $10k", "$10k - $50k", "$50k - $200k", "$200k - $500k", "$500k - $1M",
+                                               "$1M - $5M", "$5M - $10M", "$10M+"),
+        ordered = T),
+    percent = temp$coefficients)
+
+fig2 <- ggplot(dat2, aes(x = cats, y = percent)) + geom_bar(stat='identity') + ylab("Percent of U.S. Houseohlds") + xlab("Income Categories")
+
+
+```
+
+```{r, echo = F, fig.height = 5, fig.width=10}
+fig2 + ggtitle("Distribution of Wealth")
+```
+
+## From Broad Categories to Specific Ideas
+
+People have a poor idea of where they stand in relation to society at large.  Most wealthy people think that they are middle class.  These figures give readers are more specific understanding of where they stand in relation to others in terms of income and wealth.  Of course, these benchmarks do not account for age, region, or a host of other factors.  If there's interest, I can break this out further.
+
+
+```{r, eval = T, include = F}
+postID <- knit2wp(
+        input = fileName, 
+        title = postTitle, 
+        publish = FALSE,
+        action = "newPost",
+        categories = c("notes"),
+        tags = c("survey-of-consumer-finances", "household-finance"),
+        mt_excerpt = "Insert excerpt here"
+)
+```
